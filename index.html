@@ -35,6 +35,17 @@
   <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
   <script type="text/babel">
 
+    const jsonLocalStorage = {
+      setItem: (key, value) => {
+        localStorage.setItem(key, JSON.stringify(value));
+      },
+      getItem: (key) => {
+        return JSON.parse(localStorage.getItem(key));
+      },
+    };
+
+
+
     // 깃업로드테스트
     const Title = (props) => {
       return (
@@ -43,19 +54,31 @@
     }
 
     //{}중괄호 안쓰고 ()를 써주면 return 없이 처리 가능
-    const Form = ({ handleFormSubmit }) => {
+    const Form = ({ updateMainCat }) => {
       const includesHangul = (text) => /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/i.test(text);
-      const [value, setValue] = React.useState('');
-      const [errorMessage, setErrorMessage] = React.useState('');
+      const [value, setValue] = React.useState("");
+      const [errorMessage, setErrorMessage] = React.useState("");
+
+
 
       // 인풋체인지를 폼안에서 할때마다 이벤트가 발생하고 대문자로 입력된다
       function handleInputChange(e) {
         const userValue = e.target.value;
         setErrorMessage('');
         if (includesHangul(userValue)) {
-          setErrorMessage('한글은 입력할 수 없습니다');
+          setErrorMessage("한글은 입력할 수 없습니다.");
         }
         setValue(userValue.toUpperCase());
+      }
+
+      function handleFormSubmit(e) {
+        setErrorMessage('');
+        e.preventDefault();
+        if (value === '') {
+          setErrorMessage('입력하지않고 뭐하는데')
+          return;
+        }
+        updateMainCat();
       }
 
       return (
@@ -68,7 +91,7 @@
             onChange={handleInputChange} // 이벤트설정
           />
           <button type="submit">생성</button>
-          <p style="color:red">{errorMessage}</p>
+          <p style={{ color: "red" }}>{errorMessage}</p>
         </form>
       );
     }
@@ -78,14 +101,14 @@
     // props -> ({ img })
     // props.img -> {img}
     // 리액트에서는 class 를  className으로 작성
-    const MainCard = ({ img, handleHeartClick }) => {
+    const MainCard = ({ img, onHeartClick }) => {
       return (
-        <div className="maincard">
+        <div className="main-card">
           <img src={img} alt="고양이" width="400" />
-          <button onClick={handleHeartClick} >🤍</button>
+          <button onClick={onHeartClick}>🤍</button>
         </div>
       );
-    }
+    };
 
     const CatItem = ({ img }) => {
       return (
@@ -106,32 +129,39 @@
     }
 
     const App = () => {
-      const CAT1 = "https://cataas.com/cat/60b73094e04e18001194a309/says/react";
-      const CAT2 = "https://cataas.com//cat/5e9970351b7a400011744233/says/inflearn";
-      const CAT3 = "https://cataas.com/cat/595f280b557291a9750ebf65/says/JavaScript";
-      const [counter, setCounter] = React.useState(1);
-      const [mainCat, setMainCat] = React.useState(CAT1);
-      const [favorites, setFavorites] = React.useState([CAT1, CAT2]);
+      const CAT1 =
+        "https://cataas.com/cat/60b73094e04e18001194a309/says/react";
+      const CAT2 =
+        "https://cataas.com//cat/5e9970351b7a400011744233/says/inflearn";
+      const CAT3 =
+        "https://cataas.com/cat/595f280b557291a9750ebf65/says/JavaScript";
 
+      const [counter, setCounter] = React.useState(jsonLocalStorage.getItem('counter'));
+
+      const [mainCat, setMainCat] = React.useState(CAT1);
+      const [favorites, setFavorites] = React.useState(jsonLocalStorage.getItem('favorites') || []);
       // 하트를 눌렀음 표시하는 함수
       function handleHeartClick() {
-        console.log('123');
-        setFavorites([...favorites, CAT3]);
+        const nextFavorites = [...favorites, mainCat];
+        setFavorites(nextFavorites);
+        jsonLocalStorage.setItem('favorites', nextFavorites)
       }
 
 
-      // 생성을 눌렀을때 카운터가 올라가고 메인사진이 바뀐다
-      function handleFormSubmit(e) {
-        event.preventDefault();
-        setCounter(counter + 1);
+      // 생성을 눌렀을때 카운터가 올라가고 메인사진이 바뀌고 로컬스토리지에 기록됨
+      function updateMainCat() {
         setMainCat(CAT2);
+        const nextCounter = counter + 1;
+        setCounter(nextCounter);
+        jsonLocalStorage.setItem("counter", nextCounter);
       }
 
       return (
         <div>
           <Title>{counter}고양이</Title>
-          <Form handleFormSubmit={handleFormSubmit} />
-          <MainCard img={mainCat} handleHeartClick={handleHeartClick} />
+          <Form updateMainCat={updateMainCat} />
+
+          <MainCard img={mainCat} onHeartClick={handleHeartClick} />
           <CatItem />
           <Favorites favorites={favorites} />
         </div>
